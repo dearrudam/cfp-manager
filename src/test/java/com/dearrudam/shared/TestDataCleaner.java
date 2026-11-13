@@ -11,6 +11,8 @@ public class TestDataCleaner {
     EntityManager em;
 
     public void clean() {
+        em.createQuery("delete from ProposalSpeaker").executeUpdate();
+        em.createQuery("delete from Proposal").executeUpdate();
         em.createQuery("delete from Draft").executeUpdate();
         em.createQuery("delete from Cfp").executeUpdate();
         em.createQuery("delete from Event").executeUpdate();

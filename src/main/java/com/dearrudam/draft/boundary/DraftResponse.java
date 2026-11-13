@@ -3,13 +3,17 @@ package com.dearrudam.draft.boundary;
 import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.dearrudam.draft.entity.Draft;
+import com.dearrudam.proposal.entity.TalkLevel;
 
 public record DraftResponse(
         Long id,
         String title,
-        String description,
+        @JsonProperty("abstract") String abstractText,
+        TalkLevel level,
+        Integer durationMinutes,
         Long ownerId,
         String ownerName,
         Instant createdAt,
@@ -19,7 +23,9 @@ public record DraftResponse(
         return new DraftResponse(
                 draft.id,
                 draft.title,
-                draft.description,
+                draft.abstractText,
+                draft.level,
+                draft.durationMinutes,
                 draft.owner.id,
                 draft.owner.name,
                 draft.createdAt,

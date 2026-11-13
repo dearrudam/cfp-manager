@@ -14,8 +14,8 @@ The application covers the end-to-end flow of a Call for Papers:
 - **Users** — speaker and coordinator accounts.
 - **Events** — conference/meetup registration (name, dates, venue, organizers), managed by coordinators.
 - **Calls for Papers** — opening and closing submission windows per event, with tracks, formats and review criteria, managed by coordinators.
-- **Drafts** — speaker-owned working copies of talks (`title`, `description`) to prepare proposals before submission.
-- **Proposals** — talk submissions received during an open CFP (title, abstract, speakers, level, duration), submitted by speakers and triaged by coordinators.
+- **Drafts** — speaker-owned working copies of talks (`title`, `abstract`, `level`, `durationMinutes`) to prepare proposals before submission.
+- **Proposals** — talk submissions (`SUBMITTED` → `APPROVED` | `REJECTED`) sent to an open CFP, with an owner and optional co-speakers; submitted by speakers and triaged by coordinators.
 
 ## Endpoints
 
@@ -35,11 +35,16 @@ The application covers the end-to-end flow of a Call for Papers:
 - `GET /api/users/{id}` — public profile of a user (`id`, `name`, `roles`, `bio`); 404 when the id does not exist.
 - `GET /api/users/me` — own profile (`id`, `name`, `email`, `roles`, `bio`, `createdAt`). Requires `Authorization: Bearer <token>`.
 - `PUT /api/users/me` — update own `name` and `bio`. Requires `Authorization: Bearer <token>`.
-- `GET /api/drafts` — list own drafts, newest first (`id`, `title`, `description`, `ownerId`, `ownerName`, `createdAt`, `updatedAt`). Requires the `SPEAKER` role.
-- `POST /api/drafts` — create a draft (`title`, `description`; both required). Requires the `SPEAKER` role; the caller becomes the draft `owner`.
+- `GET /api/drafts` — list own drafts, newest first (`id`, `title`, `abstract`, `level`, `durationMinutes`, `ownerId`, `ownerName`, `createdAt`, `updatedAt`). Requires the `SPEAKER` role.
+- `POST /api/drafts` — create a draft (`title`, `abstract`, `level` — `BEGINNER`/`INTERMEDIATE`/`ADVANCED`, `durationMinutes`; all required). Requires the `SPEAKER` role; the caller becomes the draft `owner`.
 - `GET /api/drafts/{id}` — view a draft. Owner only; 403 for any other user, 404 when it does not exist.
-- `PUT /api/drafts/{id}` — update `title` and/or `description` (either may be omitted; blank values are rejected). Owner only.
+- `PUT /api/drafts/{id}` — update any of `title`, `abstract`, `level`, `durationMinutes` (all optional; blank strings and durations below 1 are rejected). Owner only.
 - `DELETE /api/drafts/{id}` — delete a draft. Owner only; 204 on success.
+- `POST /api/proposals` — submit a talk proposal to an event's open CFP (`eventId`, `title`, `abstract`, `level`, `durationMinutes`; optional `saveAsDraft` also stores a draft copy). Requires the `SPEAKER` role; created directly as `SUBMITTED`. 404 for unknown event/CFP, 409 when the CFP is not open.
+- `GET /api/proposals/mine` — list own proposals, newest first, with co-speakers. Requires the `SPEAKER` role.
+- `GET /api/proposals/{id}` — view a proposal with its co-speakers (`status`, `cfpId`, `eventId`, `owner`, `speakers`, `draftId` when `saveAsDraft` was used). Requires authentication (any role); 404 when it does not exist.
+- `PUT /api/proposals/{id}` — replace `title`, `abstract`, `level` and `durationMinutes`. Owner only and only while the CFP is open; 403 for non-owners, 409 once the CFP closes.
+- `POST /api/proposals/{id}/speakers` — add a co-speaker (`userId`; any registered user). Owner only while the CFP is open; 409 on duplicate or when adding the owner, 404 on unknown user.
 
 ## Tech stack
 

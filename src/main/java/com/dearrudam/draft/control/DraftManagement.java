@@ -9,6 +9,7 @@ import jakarta.transaction.Transactional;
 
 import com.dearrudam.draft.entity.Draft;
 import com.dearrudam.draft.entity.DraftRepository;
+import com.dearrudam.proposal.entity.TalkLevel;
 import com.dearrudam.user.control.InvalidCredentialsException;
 import com.dearrudam.user.entity.UserRepository;
 
@@ -30,22 +31,28 @@ public class DraftManagement {
     }
 
     @Transactional
-    public Draft create(String title, String description, String callerEmail) {
+    public Draft create(String title, String abstractText, TalkLevel level, Integer durationMinutes,
+            String callerEmail) {
         var owner = users.findByEmail(callerEmail)
                 .orElseThrow(InvalidCredentialsException::new);
         var draft = new Draft();
         draft.owner = owner;
         draft.title = title;
-        draft.description = description;
+        draft.abstractText = abstractText;
+        draft.level = level;
+        draft.durationMinutes = durationMinutes;
         drafts.persist(draft);
         return draft;
     }
 
     @Transactional
-    public Draft update(Long id, Optional<String> title, Optional<String> description, String callerEmail) {
+    public Draft update(Long id, Optional<String> title, Optional<String> abstractText,
+            Optional<TalkLevel> level, Optional<Integer> durationMinutes, String callerEmail) {
         var draft = ownedDraft(id, callerEmail);
         title.ifPresent(t -> draft.title = t);
-        description.ifPresent(d -> draft.description = d);
+        abstractText.ifPresent(a -> draft.abstractText = a);
+        level.ifPresent(l -> draft.level = l);
+        durationMinutes.ifPresent(d -> draft.durationMinutes = d);
         return draft;
     }
 

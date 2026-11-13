@@ -42,7 +42,8 @@ public class DraftResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(@Valid DraftRequest request) {
-        var draft = management.create(request.title(), request.description(), jwt.getName());
+        var draft = management.create(request.title(), request.abstractText(),
+                request.level(), request.durationMinutes(), jwt.getName());
         return Response.status(Response.Status.CREATED)
                 .entity(DraftResponse.from(draft))
                 .build();
@@ -60,8 +61,8 @@ public class DraftResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public DraftResponse update(@PathParam("id") Long id, @Valid UpdateDraftRequest request) {
-        return DraftResponse.from(
-                management.update(id, request.title(), request.description(), jwt.getName()));
+        return DraftResponse.from(management.update(id, request.title(), request.abstractText(),
+                request.level(), request.durationMinutes(), jwt.getName()));
     }
 
     @DELETE

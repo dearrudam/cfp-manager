@@ -4,6 +4,8 @@ import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -15,6 +17,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.dearrudam.proposal.entity.TalkLevel;
 import com.dearrudam.user.entity.User;
 
 @Entity
@@ -32,8 +35,15 @@ public class Draft {
     @Column(nullable = false)
     public String title;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    public String description;
+    @Column(name = "abstract", columnDefinition = "TEXT", nullable = false)
+    public String abstractText;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    public TalkLevel level;
+
+    @Column(name = "duration_minutes", nullable = false)
+    public Integer durationMinutes;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)

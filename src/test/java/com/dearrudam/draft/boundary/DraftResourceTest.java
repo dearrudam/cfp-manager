@@ -1,6 +1,5 @@
 package com.dearrudam.draft.boundary;
 
-import java.util.Map;
 import java.util.Optional;
 
 import jakarta.inject.Inject;
@@ -8,6 +7,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dearrudam.proposal.entity.TalkLevel;
 import com.dearrudam.shared.TestDataCleaner;
 import com.dearrudam.user.boundary.CoordinatorRequest;
 import com.dearrudam.user.boundary.LoginRequest;
@@ -40,12 +40,14 @@ class DraftResourceTest {
         var draftA = given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new DraftRequest("My first talk", "All about Java"))
+                .body(new DraftRequest("My first talk", "All about Java", TalkLevel.BEGINNER, 45))
         .when().post("/api/drafts")
         .then()
                 .statusCode(201)
                 .body("title", is("My first talk"))
-                .body("description", is("All about Java"))
+                .body("abstract", is("All about Java"))
+                .body("level", is("BEGINNER"))
+                .body("durationMinutes", is(45))
                 .body("ownerName", is("Speaker ada@example.com"))
                 .body("createdAt", notNullValue())
                 .extract().path("id");
@@ -53,7 +55,7 @@ class DraftResourceTest {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new DraftRequest("My second talk", "Even more Java"))
+                .body(new DraftRequest("My second talk", "Even more Java", TalkLevel.ADVANCED, 60))
         .when().post("/api/drafts")
         .then().statusCode(201);
 
@@ -73,30 +75,38 @@ class DraftResourceTest {
                 .statusCode(200)
                 .body("id", is(draftA))
                 .body("title", is("My first talk"))
-                .body("description", is("All about Java"))
+                .body("abstract", is("All about Java"))
+                .body("level", is("BEGINNER"))
+                .body("durationMinutes", is(45))
                 .body("createdAt", notNullValue())
                 .body("updatedAt", notNullValue());
 
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new UpdateDraftRequest(Optional.of("Renamed talk"), Optional.empty()))
+                .body(new UpdateDraftRequest(Optional.of("Renamed talk"), Optional.empty(),
+                        Optional.empty(), Optional.empty()))
         .when().put("/api/drafts/" + draftA)
         .then()
                 .statusCode(200)
                 .body("title", is("Renamed talk"))
-                .body("description", is("All about Java"))
+                .body("abstract", is("All about Java"))
+                .body("level", is("BEGINNER"))
+                .body("durationMinutes", is(45))
                 .body("updatedAt", notNullValue());
 
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new UpdateDraftRequest(Optional.empty(), Optional.of("New description")))
+                .body(new UpdateDraftRequest(Optional.empty(), Optional.of("New abstract"),
+                        Optional.of(TalkLevel.INTERMEDIATE), Optional.of(30)))
         .when().put("/api/drafts/" + draftA)
         .then()
                 .statusCode(200)
                 .body("title", is("Renamed talk"))
-                .body("description", is("New description"));
+                .body("abstract", is("New abstract"))
+                .body("level", is("INTERMEDIATE"))
+                .body("durationMinutes", is(30));
 
         given()
                 .header("Authorization", "Bearer " + token)
@@ -117,7 +127,7 @@ class DraftResourceTest {
         var draftId = given()
                 .header("Authorization", "Bearer " + ownerToken)
                 .contentType("application/json")
-                .body(new DraftRequest("Private talk", "Only for me"))
+                .body(new DraftRequest("Private talk", "Only for me", TalkLevel.BEGINNER, 30))
         .when().post("/api/drafts")
         .then().statusCode(201)
                 .extract().path("id");
@@ -140,7 +150,8 @@ class DraftResourceTest {
             given()
                     .header("Authorization", "Bearer " + token)
                     .contentType("application/json")
-                    .body(new UpdateDraftRequest(Optional.of("Hijacked"), Optional.empty()))
+                    .body(new UpdateDraftRequest(Optional.of("Hijacked"), Optional.empty(),
+                            Optional.empty(), Optional.empty()))
             .when().put("/api/drafts/" + draftId)
             .then().statusCode(403);
 
@@ -167,7 +178,7 @@ class DraftResourceTest {
     void rejectsInvalidUsage() {
         given()
                 .contentType("application/json")
-                .body(new DraftRequest("Anon talk", "No auth"))
+                .body(new DraftRequest("Anon talk", "No auth", TalkLevel.BEGINNER, 30))
         .when().post("/api/drafts")
         .then().statusCode(401);
 
@@ -179,7 +190,7 @@ class DraftResourceTest {
         given()
                 .header("Authorization", "Bearer " + coordinatorToken)
                 .contentType("application/json")
-                .body(new DraftRequest("Coord talk", "Not allowed"))
+                .body(new DraftRequest("Coord talk", "Not allowed", TalkLevel.BEGINNER, 30))
         .when().post("/api/drafts")
         .then().statusCode(403);
 
@@ -193,7 +204,7 @@ class DraftResourceTest {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(Map.of("description", "Missing title"))
+                .body(new DraftRequest(null, "Missing title", TalkLevel.BEGINNER, 30))
         .when().post("/api/drafts")
         .then()
                 .statusCode(400)
@@ -202,7 +213,7 @@ class DraftResourceTest {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new DraftRequest(" ", "Blank title"))
+                .body(new DraftRequest(" ", "Blank title", TalkLevel.BEGINNER, 30))
         .when().post("/api/drafts")
         .then()
                 .statusCode(400)
@@ -211,16 +222,34 @@ class DraftResourceTest {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new DraftRequest("No description", " "))
+                .body(new DraftRequest("No abstract", " ", TalkLevel.BEGINNER, 30))
         .when().post("/api/drafts")
         .then()
                 .statusCode(400)
-                .body("field", is("description"));
+                .body("field", is("abstractText"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(new DraftRequest("Bad level", "Abstract", null, 30))
+        .when().post("/api/drafts")
+        .then()
+                .statusCode(400)
+                .body("field", is("level"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(new DraftRequest("Bad duration", "Abstract", TalkLevel.BEGINNER, 0))
+        .when().post("/api/drafts")
+        .then()
+                .statusCode(400)
+                .body("field", is("durationMinutes"));
 
         var draftId = given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new DraftRequest("Valid talk", "Has description"))
+                .body(new DraftRequest("Valid talk", "Has abstract", TalkLevel.BEGINNER, 30))
         .when().post("/api/drafts")
         .then().statusCode(201)
                 .extract().path("id");
@@ -228,11 +257,22 @@ class DraftResourceTest {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new UpdateDraftRequest(Optional.of(" "), Optional.empty()))
+                .body(new UpdateDraftRequest(Optional.of(" "), Optional.empty(),
+                        Optional.empty(), Optional.empty()))
         .when().put("/api/drafts/" + draftId)
         .then()
                 .statusCode(400)
                 .body("field", is("title"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(new UpdateDraftRequest(Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.of(0)))
+        .when().put("/api/drafts/" + draftId)
+        .then()
+                .statusCode(400)
+                .body("field", is("durationMinutes"));
 
         given()
                 .header("Authorization", "Bearer " + token)
@@ -244,7 +284,8 @@ class DraftResourceTest {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType("application/json")
-                .body(new UpdateDraftRequest(Optional.of("X"), Optional.empty()))
+                .body(new UpdateDraftRequest(Optional.of("X"), Optional.empty(),
+                        Optional.empty(), Optional.empty()))
         .when().put("/api/drafts/999999")
         .then()
                 .statusCode(404)

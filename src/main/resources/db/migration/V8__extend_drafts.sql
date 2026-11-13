@@ -1,0 +1,6 @@
+DELETE FROM drafts;
+
+ALTER TABLE drafts
+    ADD COLUMN abstract TEXT NOT NULL,
+    ADD COLUMN level VARCHAR(255) NOT NULL,
+    ADD COLUMN duration_minutes INTEGER NOT NULL;

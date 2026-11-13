@@ -23,6 +23,14 @@ The application covers the end-to-end flow of a Call for Papers:
 - `GET /api/speakers` — list speaker accounts (`id`, `name`). Public; the authenticated caller is excluded when a Bearer token is sent.
 - `POST /api/speakers` — register a speaker account (`name`, `email`, `password`, `bio`). Same rule as coordinators: an existing email gets the `SPEAKER` role added when the password matches, with name/bio updated.
 - `POST /api/auth/login` — authenticate with `email` + `password`; returns a signed JWT (`token`, `tokenType: "Bearer"`, `expiresIn`). Tokens are RS256-signed; dev/test auto-generate a key pair, production needs `smallrye.jwt.sign.key` + `mp.jwt.verify.publickey` (see `application.properties`).
+- `POST /api/events` — create an event (`name`, `description`, `startAt`, `endAt` as ISO-8601 instants). Requires a coordinator token (`@RolesAllowed("COORDINATOR")`); the authenticated coordinator becomes the event `owner`.
+- `GET /api/events/{eventId}/cfp` — view the event's Call for Papers (`id`, `eventId`, `status`, `openedAt`, `closedAt`, `createdAt`). Public; 404 when the event has no CFP.
+- `POST /api/events/{eventId}/cfp` — create the event's CFP (one per event, starts `CLOSED`). Only the event owner; 403 for anyone else.
+- `POST /api/events/{eventId}/cfp/open` — open the CFP (`OPEN`, sets `openedAt`). Owner only; 409 when already open or when the committee is empty — at least one member is required.
+- `POST /api/events/{eventId}/cfp/close` — close the CFP (`CLOSED`, sets `closedAt`). Owner only; 409 when not open. The CFP can be reopened afterwards.
+- `GET /api/events/{eventId}/cfp/committee` — list evaluation committee members (`id`, `userId`, `name`, `createdAt`). Public.
+- `POST /api/events/{eventId}/cfp/committee` — add a member (`userId`; any registered user). Owner only; 409 on duplicate, 404 on unknown user.
+- `DELETE /api/events/{eventId}/cfp/committee/{userId}` — remove a member. Owner only; 404 when not a member, 409 when it is the last one — a CFP must always keep at least one committee member.
 - `GET /api/users/{id}` — public profile of a user (`id`, `name`, `roles`, `bio`); 404 when the id does not exist.
 - `GET /api/users/me` — own profile (`id`, `name`, `email`, `roles`, `bio`, `createdAt`). Requires `Authorization: Bearer <token>`.
 - `PUT /api/users/me` — update own `name` and `bio`. Requires `Authorization: Bearer <token>`.

@@ -161,6 +161,143 @@ graph LR
     class Shared shared
 ```
 
+## Diagrams
+
+### Data model
+
+```mermaid
+erDiagram
+    USERS {
+        bigint id PK
+        varchar name
+        varchar email UK
+        varchar password_hash
+        text bio
+        timestamptz created_at
+    }
+    USER_ROLES {
+        bigint user_id PK,FK
+        varchar role PK
+    }
+    EVENTS {
+        bigint id PK
+        varchar name
+        text description
+        timestamptz start_at
+        timestamptz end_at
+        bigint owner_id FK
+        timestamptz created_at
+    }
+    CFPS {
+        bigint id PK
+        bigint event_id FK,UK
+        varchar status
+        timestamptz opened_at
+        timestamptz closed_at
+        timestamptz created_at
+    }
+    CFP_COMMITTEE {
+        bigint id PK
+        bigint cfp_id FK
+        bigint user_id FK
+        timestamptz created_at
+    }
+    DRAFTS {
+        bigint id PK
+        bigint owner_id FK
+        varchar title
+        text abstract
+        varchar level
+        int duration_minutes
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    PROPOSALS {
+        bigint id PK
+        varchar title
+        text abstract
+        varchar level
+        int duration_minutes
+        varchar status
+        bigint cfp_id FK
+        bigint owner_id FK
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    PROPOSAL_SPEAKERS {
+        bigint id PK
+        bigint proposal_id FK
+        bigint user_id FK
+        timestamptz created_at
+    }
+
+    USERS ||--o{ USER_ROLES : has
+    USERS ||--o{ EVENTS : owns
+    USERS ||--o{ DRAFTS : owns
+    USERS ||--o{ PROPOSALS : owns
+    USERS ||--o{ CFP_COMMITTEE : serves_on
+    USERS ||--o{ PROPOSAL_SPEAKERS : co_speaks
+    EVENTS ||--o| CFPS : has
+    CFPS ||--o{ CFP_COMMITTEE : has
+    CFPS |o--o{ PROPOSALS : receives
+    PROPOSALS ||--o{ PROPOSAL_SPEAKERS : has
+```
+
+### Use case diagram
+
+```mermaid
+flowchart LR
+    Visitor([Visitor])
+    User([User])
+    Speaker([Speaker])
+    Coordinator([Coordinator])
+
+    subgraph CFP["CFP Manager"]
+        Register([Register account])
+        Login([Login])
+        BrowseUsers([Browse users])
+        BrowseEvents([Browse events])
+        ViewCfp([View CFP info])
+        Profile([Manage own profile])
+        ViewProposal([View proposal details])
+        Drafts([Manage talk drafts])
+        Submit([Submit proposal])
+        Update([Update proposal])
+        CoSpeakers([Manage co-speakers])
+        MyProposals([View my proposals])
+        CreateEvent([Create event])
+        CreateCfp([Create CFP])
+        Committee([Manage committee])
+        OpenCfp([Open CFP])
+        CloseCfp([Close CFP])
+    end
+
+    Visitor --- Register
+    Visitor --- Login
+    Visitor --- BrowseUsers
+    Visitor --- BrowseEvents
+    Visitor --- ViewCfp
+    User --- Profile
+    User --- ViewProposal
+    Speaker --- Drafts
+    Speaker --- Submit
+    Speaker --- Update
+    Speaker --- CoSpeakers
+    Speaker --- MyProposals
+    Coordinator --- CreateEvent
+    Coordinator --- CreateCfp
+    Coordinator --- Committee
+    Coordinator --- OpenCfp
+    Coordinator --- CloseCfp
+    Speaker -->|«generalization»| User
+    Coordinator -->|«generalization»| User
+
+    classDef actor fill:#dae8fc,stroke:#6c8ebf,color:#000
+    class Visitor,User,Speaker,Coordinator actor
+```
+
+Public use cases (register, login, browse users/events, view CFP info) are also reachable by authenticated users; role-specific use cases follow the JWT `upn` identity — Speaker for drafts/proposals, Coordinator plus event ownership for CFP management.
+
 ## Project structure
 
 ```text

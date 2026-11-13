@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dearrudam.event.boundary.EventRequest;
+import com.dearrudam.proposal.entity.ProposalRepository;
+import com.dearrudam.proposal.entity.ProposalStatus;
 import com.dearrudam.proposal.entity.TalkLevel;
 import com.dearrudam.shared.TestDataCleaner;
 import com.dearrudam.user.boundary.CoordinatorRequest;
@@ -30,6 +32,9 @@ class ProposalResourceTest {
 
     @Inject
     TestDataCleaner cleaner;
+
+    @Inject
+    ProposalRepository proposals;
 
     @BeforeEach
     void cleanDatabase() {
@@ -186,6 +191,38 @@ class ProposalResourceTest {
         .then()
                 .statusCode(409)
                 .body("error", is("Proposal can only be modified while the CFP is open"));
+    }
+
+    @Test
+    void closingCfpMovesSubmittedProposalsToEval() {
+        var coordinatorToken = registerCoordinator("grace@example.com");
+        var speakerToken = registerSpeaker("ada@example.com");
+        var otherSpeakerToken = registerSpeaker("katherine@example.com");
+        var eventId = createEvent(coordinatorToken);
+        createCfp(coordinatorToken, eventId);
+        openCfpWithMember(coordinatorToken, eventId, "reviewer@example.com");
+
+        var submittedId = submitProposal(speakerToken, eventId);
+        var decidedId = submitProposal(otherSpeakerToken, eventId);
+        QuarkusTransaction.requiringNew().run(() ->
+                proposals.update("status = ?1 where id = ?2",
+                        ProposalStatus.APPROVED, asLong(decidedId)));
+
+        closeCfp(coordinatorToken, eventId);
+
+        given()
+                .header("Authorization", "Bearer " + speakerToken)
+        .when().get("/api/proposals/" + submittedId)
+        .then()
+                .statusCode(200)
+                .body("status", is("EVAL"));
+
+        given()
+                .header("Authorization", "Bearer " + otherSpeakerToken)
+        .when().get("/api/proposals/" + decidedId)
+        .then()
+                .statusCode(200)
+                .body("status", is("APPROVED"));
     }
 
     @Test

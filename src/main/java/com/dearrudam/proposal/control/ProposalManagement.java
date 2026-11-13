@@ -82,6 +82,12 @@ public class ProposalManagement {
     }
 
     @Transactional
+    public void moveSubmittedToEval(Cfp cfp) {
+        proposals.list("cfp = ?1 and status = ?2", cfp, ProposalStatus.SUBMITTED)
+                .forEach(proposal -> proposal.status = ProposalStatus.EVAL);
+    }
+
+    @Transactional
     public Proposal update(Long id, String title, String abstractText, TalkLevel level,
             Integer durationMinutes, String callerEmail) {
         var proposal = editableProposal(id, callerEmail);

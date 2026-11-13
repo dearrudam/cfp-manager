@@ -15,6 +15,7 @@ import com.dearrudam.cfp.entity.CfpStatus;
 import com.dearrudam.event.control.EventNotFoundException;
 import com.dearrudam.event.entity.Event;
 import com.dearrudam.event.entity.EventRepository;
+import com.dearrudam.proposal.control.ProposalManagement;
 import com.dearrudam.user.control.UserNotFoundException;
 import com.dearrudam.user.entity.UserRepository;
 
@@ -32,6 +33,9 @@ public class CfpManagement {
 
     @Inject
     UserRepository users;
+
+    @Inject
+    ProposalManagement proposals;
 
     public Cfp get(Long eventId) {
         var event = events.findById(eventId);
@@ -82,6 +86,7 @@ public class CfpManagement {
         }
         cfp.status = CfpStatus.CLOSED;
         cfp.closedAt = Instant.now();
+        proposals.moveSubmittedToEval(cfp);
         return cfp;
     }
 

@@ -15,7 +15,7 @@ The application covers the end-to-end flow of a Call for Papers:
 - **Events** — conference/meetup registration (name, dates, venue, organizers), managed by coordinators.
 - **Calls for Papers** — opening and closing submission windows per event, with tracks, formats and review criteria, managed by coordinators.
 - **Drafts** — speaker-owned working copies of talks (`title`, `abstract`, `level`, `durationMinutes`) to prepare proposals before submission.
-- **Proposals** — talk submissions (`SUBMITTED` → `APPROVED` | `REJECTED`) sent to an open CFP, with an owner and optional co-speakers; submitted by speakers and triaged by coordinators.
+- **Proposals** — talk submissions (`SUBMITTED` → `EVAL` → `APPROVED` | `REJECTED`) sent to an open CFP, with an owner and optional co-speakers; submitted by speakers and triaged by coordinators. Closing the CFP moves `SUBMITTED` proposals to `EVAL`; other states are kept.
 
 ## Endpoints
 
@@ -28,7 +28,7 @@ The application covers the end-to-end flow of a Call for Papers:
 - `GET /api/events/{eventId}/cfp` — view the event's Call for Papers (`id`, `eventId`, `status`, `openedAt`, `closedAt`, `createdAt`). Public; 404 when the event has no CFP.
 - `POST /api/events/{eventId}/cfp` — create the event's CFP (one per event, starts `CLOSED`). Only the event owner; 403 for anyone else.
 - `POST /api/events/{eventId}/cfp/open` — open the CFP (`OPEN`, sets `openedAt`). Owner only; 409 when already open or when the committee is empty — at least one member is required.
-- `POST /api/events/{eventId}/cfp/close` — close the CFP (`CLOSED`, sets `closedAt`). Owner only; 409 when not open. The CFP can be reopened afterwards.
+- `POST /api/events/{eventId}/cfp/close` — close the CFP (`CLOSED`, sets `closedAt`) and move its `SUBMITTED` proposals to `EVAL` (proposals in any other state are unchanged). Owner only; 409 when not open. The CFP can be reopened afterwards.
 - `GET /api/events/{eventId}/cfp/committee` — list evaluation committee members (`id`, `userId`, `name`, `createdAt`). Public.
 - `POST /api/events/{eventId}/cfp/committee` — add a member (`userId`; any registered user). Owner only; 409 on duplicate, 404 on unknown user.
 - `DELETE /api/events/{eventId}/cfp/committee/{userId}` — remove a member. Owner only; 404 when not a member, 409 when it is the last one — a CFP must always keep at least one committee member.

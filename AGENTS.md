@@ -57,6 +57,7 @@ Tests mirror the BCE package structure under `src/test/java`.
 - Input DTOs use bean validation (`@NotBlank`, `@Email`, …) — requires the `quarkus-hibernate-validator` extension.
 - Error responses share a consistent JSON shape: `{ "error": "...", "field": "..." }` — `field` is included for input validation errors.
 - REST resources are mounted under `/api` (e.g. `@Path("/api/users")`).
+- Protected endpoints use `@Authenticated` (or `@RolesAllowed`); the caller's identity comes from the JWT `upn` claim via `JsonWebToken` — pass it to control methods, never let control depend on `JsonWebToken`.
 - **Schema is owned by Flyway**: add `V<n>__<description>.sql` in `src/main/resources/db/migration`. Hibernate runs with `schema-management.strategy=validate` — entity mappings must match the migrated schema or startup fails.
 - Before writing Quarkus code, load extension patterns via the `quarkus-agent` MCP `quarkus_skills` tool.
 - Code, comments and docs in English.

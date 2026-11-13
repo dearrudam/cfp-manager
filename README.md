@@ -20,6 +20,9 @@ The application covers the end-to-end flow of a Call for Papers:
 
 - `POST /api/coordinators` — register a coordinator account (`name`, `email`, `password`). If the email belongs to an existing user, the `COORDINATOR` role is added only when the password matches (401 otherwise); name is updated, other roles and the password are kept.
 - `POST /api/speakers` — register a speaker account (`name`, `email`, `password`, `bio`). Same rule as coordinators: an existing email gets the `SPEAKER` role added when the password matches, with name/bio updated.
+- `POST /api/auth/login` — authenticate with `email` + `password`; returns a signed JWT (`token`, `tokenType: "Bearer"`, `expiresIn`). Tokens are RS256-signed; dev/test auto-generate a key pair, production needs `smallrye.jwt.sign.key` + `mp.jwt.verify.publickey` (see `application.properties`).
+- `GET /api/users/me` — own profile (`id`, `name`, `email`, `roles`, `bio`, `createdAt`). Requires `Authorization: Bearer <token>`.
+- `PUT /api/users/me` — update own `name` and `bio`. Requires `Authorization: Bearer <token>`.
 
 ## Tech stack
 

@@ -4,12 +4,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dearrudam.user.entity.UserRepository;
+import com.dearrudam.shared.TestDataCleaner;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,14 +24,11 @@ import static org.hamcrest.Matchers.notNullValue;
 class AuthResourceTest {
 
     @Inject
-    UserRepository users;
-
-    @Inject
-    EntityManager em;
+    TestDataCleaner cleaner;
 
     @BeforeEach
     void cleanDatabase() {
-        QuarkusTransaction.requiringNew().run(() -> users.listAll().forEach(em::remove));
+        QuarkusTransaction.requiringNew().run(cleaner::clean);
     }
 
     @Test

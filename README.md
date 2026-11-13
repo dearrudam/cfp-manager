@@ -14,6 +14,7 @@ The application covers the end-to-end flow of a Call for Papers:
 - **Users** — speaker and coordinator accounts.
 - **Events** — conference/meetup registration (name, dates, venue, organizers), managed by coordinators.
 - **Calls for Papers** — opening and closing submission windows per event, with tracks, formats and review criteria, managed by coordinators.
+- **Drafts** — speaker-owned working copies of talks (`title`, `description`) to prepare proposals before submission.
 - **Proposals** — talk submissions received during an open CFP (title, abstract, speakers, level, duration), submitted by speakers and triaged by coordinators.
 
 ## Endpoints
@@ -34,6 +35,11 @@ The application covers the end-to-end flow of a Call for Papers:
 - `GET /api/users/{id}` — public profile of a user (`id`, `name`, `roles`, `bio`); 404 when the id does not exist.
 - `GET /api/users/me` — own profile (`id`, `name`, `email`, `roles`, `bio`, `createdAt`). Requires `Authorization: Bearer <token>`.
 - `PUT /api/users/me` — update own `name` and `bio`. Requires `Authorization: Bearer <token>`.
+- `GET /api/drafts` — list own drafts, newest first (`id`, `title`, `description`, `ownerId`, `ownerName`, `createdAt`, `updatedAt`). Requires the `SPEAKER` role.
+- `POST /api/drafts` — create a draft (`title`, `description`; both required). Requires the `SPEAKER` role; the caller becomes the draft `owner`.
+- `GET /api/drafts/{id}` — view a draft. Owner only; 403 for any other user, 404 when it does not exist.
+- `PUT /api/drafts/{id}` — update `title` and/or `description` (either may be omitted; blank values are rejected). Owner only.
+- `DELETE /api/drafts/{id}` — delete a draft. Owner only; 204 on success.
 
 ## Tech stack
 
@@ -119,7 +125,7 @@ The codebase follows **BCE (Boundary/Control/Entity)**, organized feature-first:
 
 Dependencies point inward: `boundary → control → entity`. The entity layer never depends on control or boundary, and the boundary never exposes entities — DTO mapping happens at the resource. Features may interact through each other's `control`/`entity` classes; cross-cutting code (exception mappers, error envelope) lives in `shared`.
 
-Every feature (`user`, `event`, `cfp`, `proposal`) follows the same pattern:
+Every feature (`user`, `event`, `cfp`, `draft`, `proposal`) follows the same pattern:
 
 ```mermaid
 graph LR
@@ -156,6 +162,7 @@ src/main/java/com/dearrudam/
     entity/    # Panache entities + repositories
   event/       # event registration and management (same BCE layout)
   cfp/         # call for papers lifecycle (same BCE layout)
+  draft/       # speaker-owned talk drafts (same BCE layout)
   proposal/    # talk proposal submission and triage (same BCE layout)
   shared/      # cross-cutting concerns (exception mappers, error envelope)
 src/main/resources/

@@ -27,6 +27,7 @@ BCE (Boundary/Control/Entity), organized feature-first under `com.dearrudam`. Ea
 - `user` — speaker/coordinator accounts
 - `event` — event registration and management
 - `cfp` — call for papers lifecycle
+- `draft` — speaker-owned talk drafts
 - `proposal` — talk proposal submission and triage
 
 Each feature package contains:
@@ -42,6 +43,7 @@ src/main/java/com/dearrudam/
   user/       boundary/ · control/ · entity/
   event/      boundary/ · control/ · entity/
   cfp/        boundary/ · control/ · entity/
+  draft/      boundary/ · control/ · entity/
   proposal/   boundary/ · control/ · entity/
   shared/     cross-cutting concerns
 ```

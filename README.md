@@ -25,6 +25,8 @@ The application covers the end-to-end flow of a Call for Papers:
 - `POST /api/speakers` — register a speaker account (`name`, `email`, `password`, `bio`). Same rule as coordinators: an existing email gets the `SPEAKER` role added when the password matches, with name/bio updated.
 - `POST /api/auth/login` — authenticate with `email` + `password`; returns a signed JWT (`token`, `tokenType: "Bearer"`, `expiresIn`). Tokens are RS256-signed; dev/test auto-generate a key pair, production needs `smallrye.jwt.sign.key` + `mp.jwt.verify.publickey` (see `application.properties`).
 - `POST /api/events` — create an event (`name`, `description`, `startAt`, `endAt` as ISO-8601 instants). Requires a coordinator token (`@RolesAllowed("COORDINATOR")`); the authenticated coordinator becomes the event `owner`.
+- `GET /api/events` — list all events by `startAt`, soonest first. Public.
+- `GET /api/events/{id}` — view event details (`id`, `name`, `description`, `startAt`, `endAt`, `ownerId`, `ownerName`, `createdAt`). Public; 404 when the id does not exist.
 - `GET /api/events/{eventId}/cfp` — view the event's Call for Papers (`id`, `eventId`, `status`, `openedAt`, `closedAt`, `createdAt`). Public; 404 when the event has no CFP.
 - `POST /api/events/{eventId}/cfp` — create the event's CFP (one per event, starts `CLOSED`). Only the event owner; 403 for anyone else.
 - `POST /api/events/{eventId}/cfp/open` — open the CFP (`OPEN`, sets `openedAt`). Owner only; 409 when already open or when the committee is empty — at least one member is required.

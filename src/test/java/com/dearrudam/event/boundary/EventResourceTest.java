@@ -63,6 +63,43 @@ class EventResourceTest {
     }
 
     @Test
+    void listsEventsForVisitors() {
+        var eventId = createEvent();
+
+        given()
+        .when().get("/api/events")
+        .then()
+                .statusCode(200)
+                .body("size()", is(1))
+                .body("[0].id", is(eventId))
+                .body("[0].name", is("Devoxx"))
+                .body("[0].ownerName", is("Grace Hopper"));
+    }
+
+    @Test
+    void getsEventForVisitors() {
+        var eventId = createEvent();
+
+        given()
+        .when().get("/api/events/" + eventId)
+        .then()
+                .statusCode(200)
+                .body("id", is(eventId))
+                .body("name", is("Devoxx"))
+                .body("description", is("Java conference"))
+                .body("startAt", is("2026-06-01T10:00:00Z"))
+                .body("endAt", is("2026-06-03T18:00:00Z"))
+                .body("ownerName", is("Grace Hopper"))
+                .body("createdAt", notNullValue());
+
+        given()
+        .when().get("/api/events/999999")
+        .then()
+                .statusCode(404)
+                .body("error", is("Event not found"));
+    }
+
+    @Test
     void rejectsNonCoordinators() {
         given()
                 .contentType("application/json")
@@ -115,6 +152,24 @@ class EventResourceTest {
         .then()
                 .statusCode(400)
                 .body("error", is("endAt must be after startAt"));
+    }
+
+    private Integer createEvent() {
+        given()
+                .contentType("application/json")
+                .body(new CoordinatorRequest("Grace Hopper", "grace@example.com", "correct horse"))
+        .when().post("/api/coordinators")
+        .then().statusCode(201);
+
+        var token = login("grace@example.com", "correct horse");
+
+        return given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(validEvent())
+        .when().post("/api/events")
+        .then().statusCode(201)
+                .extract().path("id");
     }
 
     private EventRequest validEvent() {

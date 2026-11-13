@@ -12,7 +12,7 @@ import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -34,41 +34,48 @@ class CoordinatorResourceTest {
     void registersCoordinator() {
         given()
                 .contentType("application/json")
-                .body(new CoordinatorRequest("Ada Lovelace", "ada@example.com", "correct horse"))
+                .body(new CoordinatorRequest("Grace Hopper", "grace@example.com", "correct horse"))
         .when().post("/api/coordinators")
         .then()
                 .statusCode(201)
                 .body("id", notNullValue())
-                .body("name", is("Ada Lovelace"))
-                .body("email", is("ada@example.com"))
-                .body("roles", contains("COORDINATOR"))
+                .body("name", is("Grace Hopper"))
+                .body("email", is("grace@example.com"))
+                .body("roles", containsInAnyOrder("COORDINATOR"))
                 .body("createdAt", notNullValue());
     }
 
     @Test
-    void rejectsDuplicateEmail() {
-        var request = new CoordinatorRequest("Ada Lovelace", "ada@example.com", "correct horse");
+    void grantsRoleOnlyWhenPasswordMatches() {
         given()
                 .contentType("application/json")
-                .body(request)
-        .when().post("/api/coordinators")
+                .body(new SpeakerRequest("Grace Hopper", "grace@example.com", "correct horse", null))
+        .when().post("/api/speakers")
         .then().statusCode(201);
 
         given()
                 .contentType("application/json")
-                .body(new CoordinatorRequest("Ada Byron", "ada@example.com", "another pass"))
+                .body(new CoordinatorRequest("Grace Hopper", "grace@example.com", "correct horse"))
         .when().post("/api/coordinators")
         .then()
-                .statusCode(409)
+                .statusCode(200)
+                .body("roles", containsInAnyOrder("SPEAKER", "COORDINATOR"));
+
+        given()
+                .contentType("application/json")
+                .body(new CoordinatorRequest("Grace Hopper", "grace@example.com", "wrong password"))
+        .when().post("/api/coordinators")
+        .then()
+                .statusCode(401)
                 .body("error", notNullValue())
-                .body("field", is("email"));
+                .body("field", is("password"));
     }
 
     @Test
     void rejectsInvalidInput() {
         given()
                 .contentType("application/json")
-                .body(new CoordinatorRequest("Ada Lovelace", "not-an-email", "short"))
+                .body(new CoordinatorRequest("Grace Hopper", "not-an-email", "short"))
         .when().post("/api/coordinators")
         .then()
                 .statusCode(400)

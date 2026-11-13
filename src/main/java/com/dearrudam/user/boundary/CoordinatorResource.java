@@ -9,33 +9,22 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
-
-import com.dearrudam.shared.ErrorResponse;
-import com.dearrudam.user.control.CoordinatorRegistration;
-import com.dearrudam.user.control.EmailAlreadyRegisteredException;
+import com.dearrudam.user.control.UserRegistration;
 
 @Path("/api/coordinators")
 public class CoordinatorResource {
 
     @Inject
-    CoordinatorRegistration registration;
+    UserRegistration registration;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(@Valid CoordinatorRequest request) {
-        var coordinator = registration.register(request.name(), request.email(), request.password());
-        return Response.status(Response.Status.CREATED)
-                .entity(CoordinatorResponse.from(coordinator))
-                .build();
-    }
-
-    @ServerExceptionMapper(EmailAlreadyRegisteredException.class)
-    public Response emailAlreadyRegistered(EmailAlreadyRegisteredException exception) {
-        return Response.status(Response.Status.CONFLICT)
-                .entity(ErrorResponse.of("Email already registered", "email"))
-                .type(MediaType.APPLICATION_JSON)
+        var result = registration.registerCoordinator(request.name(), request.email(), request.password());
+        var status = result.created() ? Response.Status.CREATED : Response.Status.OK;
+        return Response.status(status)
+                .entity(UserResponse.from(result.user()))
                 .build();
     }
 }

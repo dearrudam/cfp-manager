@@ -18,7 +18,8 @@ The application covers the end-to-end flow of a Call for Papers:
 
 ## Endpoints
 
-- `POST /api/coordinators` — register a coordinator account (`name`, `email`, `password`). The user is created with the `COORDINATOR` role; a user may hold multiple roles (`SPEAKER`, `COORDINATOR`).
+- `POST /api/coordinators` — register a coordinator account (`name`, `email`, `password`). If the email belongs to an existing user, the `COORDINATOR` role is added only when the password matches (401 otherwise); name is updated, other roles and the password are kept.
+- `POST /api/speakers` — register a speaker account (`name`, `email`, `password`, `bio`). Same rule as coordinators: an existing email gets the `SPEAKER` role added when the password matches, with name/bio updated.
 
 ## Tech stack
 

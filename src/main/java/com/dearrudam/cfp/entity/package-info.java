@@ -1,2 +1,2 @@
-/// Panache entities and repositories for calls for papers.
+/// Plain JPA entities and Panache repositories for calls for papers.
 package com.dearrudam.cfp.entity;

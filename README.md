@@ -16,6 +16,10 @@ The application covers the end-to-end flow of a Call for Papers:
 - **Calls for Papers** — opening and closing submission windows per event, with tracks, formats and review criteria, managed by coordinators.
 - **Proposals** — talk submissions received during an open CFP (title, abstract, speakers, level, duration), submitted by speakers and triaged by coordinators.
 
+## Endpoints
+
+- `POST /api/coordinators` — register a coordinator account (`name`, `email`, `password`). The user is created with the `COORDINATOR` role; a user may hold multiple roles (`SPEAKER`, `COORDINATOR`).
+
 ## Tech stack
 
 - **Java 25** on **Quarkus 3.40**
@@ -81,7 +85,7 @@ The application uses **Hibernate ORM with Panache** (`quarkus-hibernate-orm-pana
 - In production, set `DATABASE_URL`, `DATABASE_USER` and `DATABASE_PASSWORD` (see `src/main/resources/application.properties`).
 - Schema migrations are managed by [Flyway](https://quarkus.io/guides/flyway) (`quarkus-flyway`): SQL files in `src/main/resources/db/migration` (`V<n>__<description>.sql`) run automatically on startup in every profile. Hibernate schema generation is disabled; `schema-management.strategy=validate` makes Hibernate verify entity mappings against the migrated schema at startup.
 
-Entities should extend `PanacheEntity` (active record) or use a `PanacheRepository`. See the [Hibernate ORM with Panache guide](https://quarkus.io/guides/hibernate-orm-panache).
+Entities are plain JPA classes with public fields; data access goes through `PanacheRepository` beans (repository pattern — no active record). See the [Hibernate ORM with Panache guide](https://quarkus.io/guides/hibernate-orm-panache).
 
 ## Testing
 

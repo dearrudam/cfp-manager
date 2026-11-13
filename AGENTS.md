@@ -33,7 +33,7 @@ Each feature package contains:
 
 - `boundary` — presentation: JAX-RS resources mounted under `/api`, request/response DTO records, entity↔DTO mappers, feature exception mappers.
 - `control` — business logic: use-case classes named after their responsibility (never `*Control`, `*Service` or `*Manager` suffixes) that orchestrate entities and enforce domain rules.
-- `entity` — domain and persistence: Panache entities and Panache repositories.
+- `entity` — domain and persistence: plain JPA entities and `PanacheRepository` beans.
 
 Dependencies point inward: `boundary → control → entity`. The entity layer never depends on control or boundary, and the boundary never exposes entities — DTO mapping happens at the resource. Cross-cutting code shared by all features (exception mappers, error envelope) lives in `shared`.
 
@@ -52,7 +52,7 @@ Tests mirror the BCE package structure under `src/test/java`.
 
 - Java 25 idioms; see `.agents/skills/java-conventions` (records, `var`, package-private over `private`, AssertJ for tests).
 - Aim for clean, idiomatic, well-crafted code — load `.agents/skills/java-distiller` to simplify, modernize and beautify Java code.
-- Panache entities extend `PanacheEntity` with public fields; `@Transactional` on write endpoints, not on entities.
+- Entities are plain JPA classes with public fields; data access goes through `PanacheRepository` beans — repository pattern, no active record. `@Transactional` on control write methods, never on entities or repositories.
 - REST resources exchange **DTOs** (records) for input and output — never expose Panache entities in the API; map entity ↔ DTO at the resource boundary.
 - Input DTOs use bean validation (`@NotBlank`, `@Email`, …) — requires the `quarkus-hibernate-validator` extension.
 - Error responses share a consistent JSON shape: `{ "error": "...", "field": "..." }` — `field` is included for input validation errors.

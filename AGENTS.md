@@ -35,6 +35,7 @@ Tests mirror the feature packages under `src/test/java`.
 ## Conventions
 
 - Java 25 idioms; see `.agents/skills/java-conventions` (records, `var`, package-private over `private`, AssertJ for tests).
+- Aim for clean, idiomatic, well-crafted code — load `.agents/skills/java-distiller` to simplify, modernize and beautify Java code.
 - Panache entities extend `PanacheEntity` with public fields; `@Transactional` on write endpoints, not on entities.
 - REST resources exchange **DTOs** (records) for input and output — never expose Panache entities in the API; map entity ↔ DTO at the resource boundary.
 - Input DTOs use bean validation (`@NotBlank`, `@Email`, …) — requires the `quarkus-hibernate-validator` extension.

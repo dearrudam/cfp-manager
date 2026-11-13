@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "skills": {
+    "conventional-commit": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/conventional-commit/SKILL.md",
+      "computedHash": "0c5976fd4e213aa5c8904c32d4216d66ea3f7010877f98eed4660d5e6d7cad60"
+    },
+    "diagrams": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/diagrams/SKILL.md",
+      "computedHash": "35ca007cea7d8bbc4b563c22a4f501378ac2a0a2e20b89f08e400fcd98a75e0b"
+    },
+    "java-conventions": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/java-conventions/SKILL.md",
+      "computedHash": "09e6d07dcd1185fac1aa764ea0b2d6476b30191891992be6b91049775c7043f6"
+    },
+    "java-distiller": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/java-distiller/SKILL.md",
+      "computedHash": "f54e75775ee0570df8cad309470f6a6b38ef4eb29eeee3dacc66f13e7c4d6b6f"
+    },
+    "mermaid": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/mermaid/SKILL.md",
+      "computedHash": "da728d051113a3d5e917a9c5f0d12b4f7094cc38c34370e4d710a8eea1f72059"
+    }
+  }
+}

@@ -22,15 +22,31 @@ Dev/test use Quarkus Dev Services: a PostgreSQL container starts automatically (
 
 ## Architecture
 
-Package-by-feature under `com.dearrudam` — each capability keeps its entity, REST resource, services and repositories together:
+BCE (Boundary/Control/Entity), organized feature-first under `com.dearrudam`. Each business capability is a top-level package split into three layers:
 
-- `user` —  speaker/coordinator accounts
+- `user` — speaker/coordinator accounts
 - `event` — event registration and management
 - `cfp` — call for papers lifecycle
 - `proposal` — talk proposal submission and triage
-- `shared` — cross-cutting concerns only
 
-Tests mirror the feature packages under `src/test/java`.
+Each feature package contains:
+
+- `boundary` — presentation: JAX-RS resources mounted under `/api`, request/response DTO records, entity↔DTO mappers, feature exception mappers.
+- `control` — business logic: use-case classes named after their responsibility (never `*Control`, `*Service` or `*Manager` suffixes) that orchestrate entities and enforce domain rules.
+- `entity` — domain and persistence: Panache entities and Panache repositories.
+
+Dependencies point inward: `boundary → control → entity`. The entity layer never depends on control or boundary, and the boundary never exposes entities — DTO mapping happens at the resource. Cross-cutting code shared by all features (exception mappers, error envelope) lives in `shared`.
+
+```text
+src/main/java/com/dearrudam/
+  user/       boundary/ · control/ · entity/
+  event/      boundary/ · control/ · entity/
+  cfp/        boundary/ · control/ · entity/
+  proposal/   boundary/ · control/ · entity/
+  shared/     cross-cutting concerns
+```
+
+Tests mirror the BCE package structure under `src/test/java`.
 
 ## Conventions
 

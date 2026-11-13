@@ -92,20 +92,56 @@ Entities should extend `PanacheEntity` (active record) or use a `PanacheReposito
 
 ## Architecture
 
-The codebase follows a **package-by-feature** organization: each business capability lives in its own top-level package under `com.dearrudam`, keeping all related classes — domain entities, REST resources, services and repositories — together. Code shared across features goes in a `shared` package.
+The codebase follows **BCE (Boundary/Control/Entity)**, organized feature-first: each business capability is a top-level package under `com.dearrudam`, split into three layers.
+
+- `boundary` — presentation: JAX-RS resources mounted under `/api`, request/response DTO records, entity↔DTO mappers, exception mappers.
+- `control` — business logic: use-case classes named after their responsibility that orchestrate entities and enforce domain rules.
+- `entity` — domain and persistence: Panache entities and Panache repositories.
+
+Dependencies point inward: `boundary → control → entity`. The entity layer never depends on control or boundary, and the boundary never exposes entities — DTO mapping happens at the resource. Features may interact through each other's `control`/`entity` classes; cross-cutting code (exception mappers, error envelope) lives in `shared`.
+
+Every feature (`user`, `event`, `cfp`, `proposal`) follows the same pattern:
+
+```mermaid
+graph LR
+    subgraph Proposal
+        ProposalBoundary(["ProposalResource + DTOs"])
+        ProposalControl(["ProposalTriage"])
+        ProposalEntity(["Proposal + repository"])
+    end
+    CfpEntity(["CallForPapers + repository"])
+    Shared(["shared: exception mappers, error envelope"])
+
+    ProposalBoundary -->|DTOs| ProposalControl
+    ProposalControl --> ProposalEntity
+    ProposalControl -.->|queries open CFPs| CfpEntity
+    ProposalBoundary -.->|errors| Shared
+
+    classDef boundary fill:#d5e8d4,stroke:#82b366,color:#000
+    classDef control fill:#e1d5e7,stroke:#9673a6,color:#000
+    classDef entity fill:#fff2cc,stroke:#d6b656,color:#000
+    classDef shared fill:#f5f5f5,stroke:#666666,color:#000,stroke-dasharray:5 5
+    class ProposalBoundary boundary
+    class ProposalControl control
+    class ProposalEntity,CfpEntity entity
+    class Shared shared
+```
 
 ## Project structure
 
 ```text
 src/main/java/com/dearrudam/
-  user/        # user accounts (speakers and coordinators)
-  event/       # event registration and management
-  cfp/         # call for papers lifecycle
-  proposal/    # talk proposal submission and triage
-  shared/      # cross-cutting concerns
+  user/        # speaker/coordinator accounts
+    boundary/  # REST resources + DTOs
+    control/   # business logic
+    entity/    # Panache entities + repositories
+  event/       # event registration and management (same BCE layout)
+  cfp/         # call for papers lifecycle (same BCE layout)
+  proposal/    # talk proposal submission and triage (same BCE layout)
+  shared/      # cross-cutting concerns (exception mappers, error envelope)
 src/main/resources/
   application.properties             # configuration (env-var driven)
   db/migration/                      # Flyway migrations (V<n>__<description>.sql)
-src/test/java/com/dearrudam/        # JUnit tests (mirrors feature packages)
+src/test/java/com/dearrudam/        # JUnit tests (mirrors BCE packages)
 src/main/docker/                    # container Dockerfiles
 ```

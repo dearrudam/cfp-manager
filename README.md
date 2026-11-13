@@ -120,6 +120,8 @@ Entities are plain JPA classes with public fields; data access goes through `Pan
 ./mvnw verify -DskipITs=false            # unit + integration tests
 ```
 
+The `quarkus-jacoco` extension instruments application classes during tests and generates a coverage report (HTML/XML/CSV) in `target/jacoco-report/` — open `target/jacoco-report/index.html`. Execution data is stored in `target/jacoco-quarkus.exec`. Tune it via `quarkus.jacoco.*` properties (e.g. `quarkus.jacoco.report=false` to disable report generation).
+
 ## Architecture
 
 The codebase follows **BCE (Boundary/Control/Entity)**, organized feature-first: each business capability is a top-level package under `com.dearrudam`, split into three layers.

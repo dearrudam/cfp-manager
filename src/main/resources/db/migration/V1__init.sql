@@ -1,0 +1,2 @@
+-- Baseline migration. Add schema changes as V2__..., V3__..., etc.
+-- Convention: V<version>__<description>.sql (e.g. V2__create_greeting.sql)

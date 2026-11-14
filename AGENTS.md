@@ -50,6 +50,39 @@ src/main/java/com/dearrudam/
 
 Tests mirror the BCE package structure under `src/test/java`.
 
+## SDD4J
+
+Spec source:
+- format: `package-info.java` (Markdown doc comments, JEP 467)
+- source root: `src/main/java`
+- requirements style: EARS
+- trace ids: `R<n>.<m>`
+
+Spec language:
+- default: `en`
+- requirements: `pt-BR`
+
+Architecture layout:
+- skill: `sdd4j-bce`
+- scope: primary project architecture
+- component package pattern: `com.dearrudam.<component>`
+- capability spec: the component package's `package-info.java` (e.g. `com.dearrudam.user`)
+- layer packages: `boundary` (entrypoints/DTOs), `control` (use cases, no spec section), `entity` (domain types)
+- components: `user`, `event`, `cfp`, `draft`, `proposal`, `review`, `shared`
+- `shared` is a flat package (no layer split): its `## Boundary` maps to the package's public entrypoints (exception mappers, constraint annotations) and `## Entities` to its public types
+- test package mirrors main package: true
+
+Stack:
+- skill: project conventions (`AGENTS.md`, `.agents/skills/java-conventions`, `.agents/skills/java-distiller`)
+- build tool: Maven (`./mvnw`)
+- verification command: `./mvnw test` (unit); `./mvnw verify -DskipITs=false` for integration tests
+
+Traceability:
+- trace convention: per-component `{Component}Requirement` annotation (e.g. `UserRequirement`, `SharedRequirement`) generated in the component root package, with a nested `Rn` enum — one constant per statement, `toString()` returning the literal spec id
+- requirement id must resolve to its exact runner-visible `Rn.m` form through a display name, case label, symbol, or annotation consumed by the test/reporting infrastructure
+- a normalized Java identifier such as `R1_2` is valid only when the configured infrastructure resolves and displays it as `R1.2`
+- JavaDoc and comments alone do not count
+
 ## Conventions
 
 - Java 25 idioms; see `.agents/skills/java-conventions` (records, `var`, package-private over `private`, AssertJ for tests).

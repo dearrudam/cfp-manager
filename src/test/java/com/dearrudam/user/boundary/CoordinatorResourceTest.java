@@ -6,10 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dearrudam.shared.TestDataCleaner;
+import com.dearrudam.user.UserRequirement;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.user.UserRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -27,6 +29,7 @@ class CoordinatorResourceTest {
     }
 
     @Test
+    @UserRequirement(R2_1)
     void registersCoordinator() {
         given()
                 .contentType("application/json")
@@ -42,6 +45,7 @@ class CoordinatorResourceTest {
     }
 
     @Test
+    @UserRequirement({R2_2, R2_3})
     void grantsRoleOnlyWhenPasswordMatches() {
         given()
                 .contentType("application/json")
@@ -68,6 +72,7 @@ class CoordinatorResourceTest {
     }
 
     @Test
+    @UserRequirement(R2_4)
     void rejectsInvalidInput() {
         given()
                 .contentType("application/json")
@@ -77,5 +82,25 @@ class CoordinatorResourceTest {
                 .statusCode(400)
                 .body("error", notNullValue())
                 .body("field", notNullValue());
+    }
+
+    @Test
+    @UserRequirement({R1_5, R2_5})
+    void normalizesEmail() {
+        given()
+                .contentType("application/json")
+                .body(new CoordinatorRequest("Grace Hopper", "Grace@Example.COM", "correct horse"))
+        .when().post("/api/coordinators")
+        .then()
+                .statusCode(201)
+                .body("email", is("grace@example.com"));
+
+        given()
+                .contentType("application/json")
+                .body(new SpeakerRequest("Alan Turing", "ALAN@Example.com", "correct horse", null))
+        .when().post("/api/speakers")
+        .then()
+                .statusCode(201)
+                .body("email", is("alan@example.com"));
     }
 }

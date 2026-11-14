@@ -63,3 +63,35 @@ Tests mirror the BCE package structure under `src/test/java`.
 - **Schema is owned by Flyway**: add `V<n>__<description>.sql` in `src/main/resources/db/migration`. Hibernate runs with `schema-management.strategy=validate` — entity mappings must match the migrated schema or startup fails.
 - Before writing Quarkus code, load extension patterns via the `quarkus-agent` MCP `quarkus_skills` tool.
 - Code, comments and docs in English.
+
+## SDD4J
+
+Spec source:
+- format: `package-info.java` (Markdown doc comments, `///`)
+- source root: `src/main/java`
+- requirements style: EARS
+- trace ids: `R<n>.<m>`
+
+Spec language:
+- default: `en`
+
+Architecture layout:
+- skill: `sdd4j-bce`
+- scope: primary project architecture
+- base package: `com.dearrudam`
+- capability package pattern: `com.dearrudam.<capability>` — the spec lives in the component root `package-info.java`
+- layer packages: `boundary`, `control`, `entity`; layer-level `package-info.java` files are plain package docs, not specs
+- declared capabilities: `user`, `event`, `cfp`, `draft`, `proposal`, `evaluation`
+- exceptions: `com.dearrudam.shared` is cross-cutting infrastructure, not a capability — no spec
+- test package mirrors main package: true
+
+Stack:
+- skill: `quarkus` (no dedicated stack skill installed; conventions in this file, Quarkus patterns via the `quarkus-agent` MCP)
+- build tool: Maven (`./mvnw`)
+- verification command: `./mvnw test` — full suite incl. ITs: `./mvnw verify -DskipITs=false`
+
+Traceability:
+- trace convention: per-capability `{Capability}Requirement` annotation with a nested `Rn` enum, generated in the component root package (e.g. `com.dearrudam.user.UserRequirement`); enum constants (e.g. `R1_2`) resolve to the literal `Rn.m` id via `toString()`
+- requirement id must resolve to its exact runner-visible `Rn.m` form through a display name, case label, symbol, or annotation consumed by the test/reporting infrastructure
+- a normalized Java identifier such as `R1_2` is valid only when the configured infrastructure resolves and displays it as `R1.2`
+- JavaDoc and comments alone do not count

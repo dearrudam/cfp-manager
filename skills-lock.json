@@ -13,6 +13,12 @@
       "skillPath": "skills/diagrams/SKILL.md",
       "computedHash": "35ca007cea7d8bbc4b563c22a4f501378ac2a0a2e20b89f08e400fcd98a75e0b"
     },
+    "drawio": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/drawio/SKILL.md",
+      "computedHash": "b8b6c9c1a128f30e917c17dc5a688e8a913f3077faeedda7bcdf8a6e43c8c59b"
+    },
     "java-conventions": {
       "source": "soujava/agent-skills",
       "sourceType": "github",
@@ -30,6 +36,24 @@
       "sourceType": "github",
       "skillPath": "skills/mermaid/SKILL.md",
       "computedHash": "da728d051113a3d5e917a9c5f0d12b4f7094cc38c34370e4d710a8eea1f72059"
+    },
+    "sdd4j": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/sdd4j/SKILL.md",
+      "computedHash": "19e72519ea2305fc265b374799a3b15c91a3985341f24db44925c5acdb4d2b4c"
+    },
+    "sdd4j-bce": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/sdd4j-bce/SKILL.md",
+      "computedHash": "a37584f3d1d0f1e84d90a6b73c06a7a8c0796e33cd291104cbc1680e7c121a90"
+    },
+    "sdd4j-ears-tests": {
+      "source": "soujava/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/sdd4j-ears-tests/SKILL.md",
+      "computedHash": "267714afede878f584695b662d1d1df6c96aa95e2647f3bbcfb57386bd8b8502"
     }
   }
 }

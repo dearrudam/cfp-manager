@@ -8,7 +8,9 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dearrudam.cfp.CfpRequirement;
 import com.dearrudam.event.boundary.EventRequest;
+import com.dearrudam.proposal.ProposalRequirement;
 import com.dearrudam.proposal.entity.ProposalRepository;
 import com.dearrudam.proposal.entity.ProposalStatus;
 import com.dearrudam.proposal.entity.TalkLevel;
@@ -20,6 +22,7 @@ import com.dearrudam.user.boundary.SpeakerRequest;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.proposal.ProposalRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -42,6 +45,7 @@ class ProposalResourceTest {
     }
 
     @Test
+    @ProposalRequirement({R1_1, R2_1, R3_1, R3_2, R4_1})
     void speakerSubmitsAndManagesProposal() {
         var speakerToken = registerSpeaker("ada@example.com");
         var eventId = openCfpWithEvent();
@@ -102,6 +106,7 @@ class ProposalResourceTest {
     }
 
     @Test
+    @ProposalRequirement(R1_2)
     void saveAsDraftCreatesDraftCopy() {
         var speakerToken = registerSpeaker("ada@example.com");
         var eventId = openCfpWithEvent();
@@ -131,6 +136,7 @@ class ProposalResourceTest {
     }
 
     @Test
+    @ProposalRequirement({R1_3, R4_3, R5_7})
     void submitRequiresOpenCfp() {
         var speakerToken = registerSpeaker("ada@example.com");
         var coordinatorToken = registerCoordinator("grace@example.com");
@@ -191,9 +197,19 @@ class ProposalResourceTest {
         .then()
                 .statusCode(409)
                 .body("error", is("Proposal can only be modified while the CFP is open"));
+
+        given()
+                .header("Authorization", "Bearer " + speakerToken)
+                .contentType("application/json")
+                .body(new ProposalSpeakerRequest(1L))
+        .when().post("/api/proposals/" + proposalId + "/speakers")
+        .then()
+                .statusCode(409)
+                .body("error", is("Proposal can only be modified while the CFP is open"));
     }
 
     @Test
+    @CfpRequirement(CfpRequirement.Rn.R4_1)
     void closingCfpMovesSubmittedProposalsToEval() {
         var coordinatorToken = registerCoordinator("grace@example.com");
         var speakerToken = registerSpeaker("ada@example.com");
@@ -226,6 +242,7 @@ class ProposalResourceTest {
     }
 
     @Test
+    @ProposalRequirement({R3_1, R5_1, R5_2, R5_3, R5_4})
     void ownerAddsCoSpeakers() {
         var speakerToken = registerSpeaker("ada@example.com");
         var eventId = openCfpWithEvent();
@@ -294,6 +311,7 @@ class ProposalResourceTest {
     }
 
     @Test
+    @ProposalRequirement({R2_1, R3_1, R4_2, R4_5, R5_6, R5_8})
     void forbidsNonOwner() {
         var ownerToken = registerSpeaker("ada@example.com");
         var eventId = openCfpWithEvent();
@@ -337,6 +355,7 @@ class ProposalResourceTest {
     }
 
     @Test
+    @ProposalRequirement({R1_4, R1_5, R2_2, R3_2, R3_3, R4_4, R4_5, R4_6, R5_5, R5_8})
     void rejectsInvalidUsage() {
         given()
                 .contentType("application/json")
@@ -353,6 +372,11 @@ class ProposalResourceTest {
                 .contentType("application/json")
                 .body(new ProposalRequest(1L, "Talk", "Abstract", TalkLevel.BEGINNER, 30, false))
         .when().post("/api/proposals")
+        .then().statusCode(403);
+
+        given()
+                .header("Authorization", "Bearer " + coordinatorToken)
+        .when().get("/api/proposals/mine")
         .then().statusCode(403);
 
         var speakerToken = registerSpeaker("ada@example.com");
@@ -426,6 +450,34 @@ class ProposalResourceTest {
         .then()
                 .statusCode(404)
                 .body("error", is("Proposal not found"));
+
+        given()
+                .header("Authorization", "Bearer " + speakerToken)
+        .when().get("/api/proposals/999999")
+        .then()
+                .statusCode(404)
+                .body("error", is("Proposal not found"));
+
+        given()
+                .contentType("application/json")
+                .body(new UpdateProposalRequest("X", "Abstract", TalkLevel.BEGINNER, 30))
+        .when().put("/api/proposals/" + proposalId)
+        .then().statusCode(401);
+
+        given()
+                .contentType("application/json")
+                .body(Map.of("userId", 1))
+        .when().post("/api/proposals/" + proposalId + "/speakers")
+        .then().statusCode(401);
+
+        given()
+                .header("Authorization", "Bearer " + speakerToken)
+                .contentType("application/json")
+                .body(new UpdateProposalRequest(" ", "Abstract", TalkLevel.BEGINNER, 30))
+        .when().put("/api/proposals/" + proposalId)
+        .then()
+                .statusCode(400)
+                .body("field", is("title"));
     }
 
     private Object createEvent(String token) {

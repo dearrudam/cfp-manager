@@ -8,10 +8,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dearrudam.shared.TestDataCleaner;
+import com.dearrudam.user.UserRequirement;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.user.UserRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -29,6 +31,7 @@ class UserResourceTest {
     }
 
     @Test
+    @UserRequirement(R6_1)
     void returnsOwnProfile() {
         given()
                 .contentType("application/json")
@@ -51,6 +54,7 @@ class UserResourceTest {
     }
 
     @Test
+    @UserRequirement(R7_1)
     void updatesNameAndBio() {
         given()
                 .contentType("application/json")
@@ -91,6 +95,7 @@ class UserResourceTest {
     }
 
     @Test
+    @UserRequirement({R6_2, R7_3})
     void requiresAuthentication() {
         given().when().get("/api/users/me").then().statusCode(401);
 
@@ -98,6 +103,34 @@ class UserResourceTest {
                 .header("Authorization", "Bearer not.a.token")
         .when().get("/api/users/me")
         .then().statusCode(401);
+
+        given()
+                .contentType("application/json")
+                .body(new UpdateProfileRequest(Optional.of("New Name"), Optional.empty()))
+        .when().put("/api/users/me")
+        .then().statusCode(401);
+    }
+
+    @Test
+    @UserRequirement(R7_2)
+    void rejectsBlankName() {
+        given()
+                .contentType("application/json")
+                .body(new SpeakerRequest("Alan Turing", "alan@example.com", "correct horse", "Bio"))
+        .when().post("/api/speakers")
+        .then().statusCode(201);
+
+        var token = login("alan@example.com", "correct horse");
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(new UpdateProfileRequest(Optional.of(" "), Optional.empty()))
+        .when().put("/api/users/me")
+        .then()
+                .statusCode(400)
+                .body("error", notNullValue())
+                .body("field", is("name"));
     }
 
     private String login(String email, String password) {

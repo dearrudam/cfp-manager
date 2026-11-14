@@ -8,6 +8,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dearrudam.cfp.CfpRequirement;
 import com.dearrudam.event.boundary.EventRequest;
 import com.dearrudam.user.boundary.CoordinatorRequest;
 import com.dearrudam.user.boundary.LoginRequest;
@@ -17,6 +18,7 @@ import com.dearrudam.shared.TestDataCleaner;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.cfp.CfpRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -34,6 +36,7 @@ class CfpResourceTest {
     }
 
     @Test
+    @CfpRequirement({R1_1, R1_3, R2_1, R3_1, R3_2, R4_1, R4_2, R6_1})
     void ownerManagesCfpLifecycle() {
         var token = registerCoordinator("grace@example.com");
         var eventId = createEvent(token);
@@ -76,6 +79,13 @@ class CfpResourceTest {
 
         given()
                 .header("Authorization", "Bearer " + token)
+        .when().post("/api/events/" + eventId + "/cfp/open")
+        .then()
+                .statusCode(409)
+                .body("error", is("CFP is already open"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
         .when().post("/api/events/" + eventId + "/cfp/close")
         .then()
                 .statusCode(200)
@@ -84,11 +94,19 @@ class CfpResourceTest {
 
         given()
                 .header("Authorization", "Bearer " + token)
+        .when().post("/api/events/" + eventId + "/cfp/close")
+        .then()
+                .statusCode(409)
+                .body("error", is("CFP is not open"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
         .when().post("/api/events/" + eventId + "/cfp/open")
         .then().statusCode(200).body("status", is("OPEN"));
     }
 
     @Test
+    @CfpRequirement({R2_4, R2_5, R3_5, R3_6, R4_4, R4_5})
     void forbidsNonOwner() {
         var ownerToken = registerCoordinator("grace@example.com");
         var eventId = createEvent(ownerToken);
@@ -99,6 +117,14 @@ class CfpResourceTest {
 
         given()
         .when().post("/api/events/" + eventId + "/cfp")
+        .then().statusCode(401);
+
+        given()
+        .when().post("/api/events/" + eventId + "/cfp/open")
+        .then().statusCode(401);
+
+        given()
+        .when().post("/api/events/" + eventId + "/cfp/close")
         .then().statusCode(401);
 
         var otherToken = registerCoordinator("linus@example.com");
@@ -116,10 +142,16 @@ class CfpResourceTest {
                     .header("Authorization", "Bearer " + token)
             .when().post("/api/events/" + eventId + "/cfp/open")
             .then().statusCode(403);
+
+            given()
+                    .header("Authorization", "Bearer " + token)
+            .when().post("/api/events/" + eventId + "/cfp/close")
+            .then().statusCode(403);
         }
     }
 
     @Test
+    @CfpRequirement({R1_2, R2_2, R2_3, R3_4, R4_3})
     void rejectsInvalidUsage() {
         var token = registerCoordinator("grace@example.com");
 
@@ -148,6 +180,13 @@ class CfpResourceTest {
         given()
                 .header("Authorization", "Bearer " + token)
         .when().post("/api/events/" + otherEventId + "/cfp/open")
+        .then()
+                .statusCode(404)
+                .body("error", is("CFP not found"));
+
+        given()
+                .header("Authorization", "Bearer " + token)
+        .when().post("/api/events/" + otherEventId + "/cfp/close")
         .then()
                 .statusCode(404)
                 .body("error", is("CFP not found"));

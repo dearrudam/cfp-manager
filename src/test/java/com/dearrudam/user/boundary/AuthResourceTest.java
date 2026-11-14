@@ -9,10 +9,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dearrudam.shared.TestDataCleaner;
+import com.dearrudam.user.UserRequirement;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.user.UserRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -32,6 +34,7 @@ class AuthResourceTest {
     }
 
     @Test
+    @UserRequirement({R5_1, R5_2})
     void issuesTokenForValidCredentials() {
         given()
                 .contentType("application/json")
@@ -57,6 +60,7 @@ class AuthResourceTest {
     }
 
     @Test
+    @UserRequirement(R5_3)
     void rejectsInvalidCredentials() {
         given()
                 .contentType("application/json")
@@ -80,6 +84,7 @@ class AuthResourceTest {
     }
 
     @Test
+    @UserRequirement(R5_4)
     void rejectsInvalidInput() {
         given()
                 .contentType("application/json")

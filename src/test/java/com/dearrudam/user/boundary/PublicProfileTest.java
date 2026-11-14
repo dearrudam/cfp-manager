@@ -6,10 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dearrudam.shared.TestDataCleaner;
+import com.dearrudam.user.UserRequirement;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.user.UserRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -28,6 +30,7 @@ class PublicProfileTest {
     }
 
     @Test
+    @UserRequirement({R8_1, R8_4})
     void returnsRequestedProfile() {
         var id = given()
                 .contentType("application/json")
@@ -48,6 +51,7 @@ class PublicProfileTest {
     }
 
     @Test
+    @UserRequirement(R8_2)
     void omitsBioWhenAbsent() {
         var id = given()
                 .contentType("application/json")
@@ -67,6 +71,7 @@ class PublicProfileTest {
     }
 
     @Test
+    @UserRequirement(R8_3)
     void returns404ForUnknownUser() {
         given().when().get("/api/users/999999")
         .then()

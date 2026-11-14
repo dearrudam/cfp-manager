@@ -47,6 +47,9 @@ The application covers the end-to-end flow of a Call for Papers:
 - `GET /api/proposals/{id}` — view a proposal with its co-speakers (`status`, `cfpId`, `eventId`, `owner`, `speakers`, `draftId` when `saveAsDraft` was used). Requires authentication (any role); 404 when it does not exist.
 - `PUT /api/proposals/{id}` — replace `title`, `abstract`, `level` and `durationMinutes`. Owner only and only while the CFP is open; 403 for non-owners, 409 once the CFP closes.
 - `POST /api/proposals/{id}/speakers` — add a co-speaker (`userId`; any registered user). Owner only while the CFP is open; 409 on duplicate or when adding the owner, 404 on unknown user.
+- `PUT /api/proposals/{id}/reviews` — create or update the caller's committee review on a proposal in `EVAL` (`score` 1–6, `comment`). Committee members of the proposal's CFP only; one review per member per proposal (resubmitting updates it). 403 for non-members, 409 when the proposal is not in `EVAL`, 400 on invalid score/comment.
+- `GET /api/proposals/{id}/reviews` — list all reviews of a proposal. Committee members of the proposal's CFP and the event owner only; 403 otherwise.
+- `GET /api/events/{eventId}/cfp/review-queue` — list the event CFP's proposals in `EVAL` awaiting review. Committee members only; 403 otherwise.
 
 ## Tech stack
 

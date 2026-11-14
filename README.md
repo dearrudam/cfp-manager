@@ -16,6 +16,7 @@ The application covers the end-to-end flow of a Call for Papers:
 - **Calls for Papers** — opening and closing submission windows per event, with tracks, formats and review criteria, managed by coordinators.
 - **Drafts** — speaker-owned working copies of talks (`title`, `abstract`, `level`, `durationMinutes`) to prepare proposals before submission.
 - **Proposals** — talk submissions (`SUBMITTED` → `EVAL` → `APPROVED` | `REJECTED`) sent to an open CFP, with an owner and optional co-speakers; submitted by speakers and triaged by coordinators. Closing the CFP moves `SUBMITTED` proposals to `EVAL`; other states are kept.
+- **Evaluations** — immutable committee scores (`1`–`5`) on proposals in `EVAL` status; each committee member evaluates a proposal at most once and can never evaluate their own.
 
 ## Endpoints
 
@@ -47,6 +48,8 @@ The application covers the end-to-end flow of a Call for Papers:
 - `GET /api/proposals/{id}` — view a proposal with its co-speakers (`status`, `cfpId`, `eventId`, `owner`, `speakers`, `draftId` when `saveAsDraft` was used). Requires authentication (any role); 404 when it does not exist.
 - `PUT /api/proposals/{id}` — replace `title`, `abstract`, `level` and `durationMinutes`. Owner only and only while the CFP is open; 403 for non-owners, 409 once the CFP closes.
 - `POST /api/proposals/{id}/speakers` — add a co-speaker (`userId`; any registered user). Owner only while the CFP is open; 409 on duplicate or when adding the owner, 404 on unknown user.
+- `POST /api/proposals/{id}/evaluations` — score a proposal (`score` 1–5). CFP committee members only, once per evaluator, only while the proposal is `EVAL`, and never on own/co-authored proposals; 403 for non-members and authors, 409 on wrong status or duplicate, 404 on unknown proposal. Evaluations cannot be updated or deleted.
+- `GET /api/proposals/{id}/evaluations` — list a proposal's evaluations (`id`, `proposalId`, `evaluatorId`, `evaluatorName`, `score`, `createdAt`). CFP committee members and the event owner only; 403 for anyone else, 404 on unknown proposal.
 
 ## Tech stack
 
@@ -230,6 +233,13 @@ erDiagram
         bigint user_id FK
         timestamptz created_at
     }
+    PROPOSAL_EVALUATIONS {
+        bigint id PK
+        bigint proposal_id FK
+        bigint evaluator_id FK
+        int score
+        timestamptz created_at
+    }
 
     USERS ||--o{ USER_ROLES : has
     USERS ||--o{ EVENTS : owns
@@ -237,10 +247,12 @@ erDiagram
     USERS ||--o{ PROPOSALS : owns
     USERS ||--o{ CFP_COMMITTEE : serves_on
     USERS ||--o{ PROPOSAL_SPEAKERS : co_speaks
+    USERS ||--o{ PROPOSAL_EVALUATIONS : evaluates
     EVENTS ||--o| CFPS : has
     CFPS ||--o{ CFP_COMMITTEE : has
     CFPS |o--o{ PROPOSALS : receives
     PROPOSALS ||--o{ PROPOSAL_SPEAKERS : has
+    PROPOSALS ||--o{ PROPOSAL_EVALUATIONS : has
 ```
 
 ### Use case diagram
@@ -264,6 +276,7 @@ flowchart LR
         Submit([Submit proposal])
         Update([Update proposal])
         CoSpeakers([Manage co-speakers])
+        Evaluate([Evaluate proposal])
         MyProposals([View my proposals])
         CreateEvent([Create event])
         CreateCfp([Create CFP])
@@ -283,6 +296,7 @@ flowchart LR
     Speaker --- Submit
     Speaker --- Update
     Speaker --- CoSpeakers
+    User --- Evaluate
     Speaker --- MyProposals
     Coordinator --- CreateEvent
     Coordinator --- CreateCfp

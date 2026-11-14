@@ -16,6 +16,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import com.dearrudam.proposal.control.EvaluationManagement;
 import com.dearrudam.proposal.control.ProposalManagement;
 
 import io.quarkus.security.Authenticated;
@@ -27,6 +28,9 @@ public class ProposalResource {
 
     @Inject
     ProposalManagement management;
+
+    @Inject
+    EvaluationManagement evaluations;
 
     @Inject
     JsonWebToken jwt;
@@ -85,5 +89,27 @@ public class ProposalResource {
         return Response.status(Response.Status.CREATED)
                 .entity(ProposalSpeakerResponse.from(speaker))
                 .build();
+    }
+
+    @POST
+    @Path("/{id}/evaluations")
+    @Authenticated
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response evaluate(@PathParam("id") Long id, @Valid ProposalEvaluationRequest request) {
+        var evaluation = evaluations.evaluate(id, request.score(), jwt.getName());
+        return Response.status(Response.Status.CREATED)
+                .entity(ProposalEvaluationResponse.from(evaluation))
+                .build();
+    }
+
+    @GET
+    @Path("/{id}/evaluations")
+    @Authenticated
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ProposalEvaluationResponse> listEvaluations(@PathParam("id") Long id) {
+        return evaluations.list(id, jwt.getName()).stream()
+                .map(ProposalEvaluationResponse::from)
+                .toList();
     }
 }

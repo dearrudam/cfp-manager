@@ -6,12 +6,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dearrudam.shared.TestDataCleaner;
+import com.dearrudam.user.UserRequirement;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.user.UserRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
@@ -28,6 +31,7 @@ class CoordinatorListingTest {
     }
 
     @Test
+    @UserRequirement({R4_1, R4_3, R4_4})
     void listsOnlyUsersWithCoordinatorRole() {
         registerCoordinator("coordinator@example.com", "Coordinator One");
         given()
@@ -41,11 +45,12 @@ class CoordinatorListingTest {
         .then()
                 .statusCode(200)
                 .body("size()", is(2))
-                .body("name", containsInAnyOrder("Coordinator One", "Both Roles"))
+                .body("name", contains("Both Roles", "Coordinator One"))
                 .body("$", everyItem(aMapWithSize(2)));
     }
 
     @Test
+    @UserRequirement(R4_2)
     void excludesAuthenticatedCaller() {
         registerCoordinator("self@example.com", "Self Coordinator");
         registerCoordinator("other@example.com", "Other Coordinator");

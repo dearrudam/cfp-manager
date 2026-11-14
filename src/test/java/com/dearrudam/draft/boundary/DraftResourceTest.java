@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dearrudam.draft.DraftRequirement;
 import com.dearrudam.proposal.entity.TalkLevel;
 import com.dearrudam.shared.TestDataCleaner;
 import com.dearrudam.user.boundary.CoordinatorRequest;
@@ -16,8 +17,9 @@ import com.dearrudam.user.boundary.SpeakerRequest;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.draft.DraftRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -34,6 +36,7 @@ class DraftResourceTest {
     }
 
     @Test
+    @DraftRequirement({R1_1, R1_2, R2_1, R3_1, R4_1, R5_1})
     void speakerManagesDrafts() {
         var token = registerSpeaker("ada@example.com");
 
@@ -65,7 +68,7 @@ class DraftResourceTest {
         .then()
                 .statusCode(200)
                 .body("size()", is(2))
-                .body("title", containsInAnyOrder("My first talk", "My second talk"))
+                .body("title", contains("My second talk", "My first talk"))
                 .body("ownerName", everyItem(is("Speaker ada@example.com")));
 
         given()
@@ -122,6 +125,7 @@ class DraftResourceTest {
     }
 
     @Test
+    @DraftRequirement({R1_1, R3_1, R3_3, R4_3, R5_3, R6_1})
     void forbidsNonOwner() {
         var ownerToken = registerSpeaker("ada@example.com");
         var draftId = given()
@@ -175,6 +179,7 @@ class DraftResourceTest {
     }
 
     @Test
+    @DraftRequirement({R2_2, R3_2, R4_2, R4_4, R5_2, R6_1})
     void rejectsInvalidUsage() {
         given()
                 .contentType("application/json")
@@ -184,6 +189,13 @@ class DraftResourceTest {
 
         given().when().get("/api/drafts").then().statusCode(401);
         given().when().get("/api/drafts/1").then().statusCode(401);
+        given()
+                .contentType("application/json")
+                .body(new UpdateDraftRequest(Optional.of("X"), Optional.empty(),
+                        Optional.empty(), Optional.empty()))
+        .when().put("/api/drafts/1")
+        .then().statusCode(401);
+        given().when().delete("/api/drafts/1").then().statusCode(401);
 
         var coordinatorToken = registerCoordinator("linus@example.com");
 

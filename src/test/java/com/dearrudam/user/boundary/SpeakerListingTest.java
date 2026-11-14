@@ -6,12 +6,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dearrudam.shared.TestDataCleaner;
+import com.dearrudam.user.UserRequirement;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.user.UserRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
@@ -28,6 +31,7 @@ class SpeakerListingTest {
     }
 
     @Test
+    @UserRequirement({R3_1, R3_3, R3_4})
     void listsOnlyUsersWithSpeakerRole() {
         given()
                 .contentType("application/json")
@@ -45,11 +49,12 @@ class SpeakerListingTest {
         .then()
                 .statusCode(200)
                 .body("size()", is(2))
-                .body("name", containsInAnyOrder("Speaker One", "Both Roles"))
+                .body("name", contains("Both Roles", "Speaker One"))
                 .body("$", everyItem(aMapWithSize(2)));
     }
 
     @Test
+    @UserRequirement(R3_2)
     void excludesAuthenticatedCaller() {
         given()
                 .contentType("application/json")

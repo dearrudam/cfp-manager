@@ -8,6 +8,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dearrudam.cfp.CfpRequirement;
 import com.dearrudam.event.boundary.EventRequest;
 import com.dearrudam.shared.TestDataCleaner;
 import com.dearrudam.user.boundary.CoordinatorRequest;
@@ -17,8 +18,9 @@ import com.dearrudam.user.boundary.SpeakerRequest;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.cfp.CfpRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -34,6 +36,7 @@ class CfpCommitteeTest {
     }
 
     @Test
+    @CfpRequirement({R5_1, R5_2, R5_3, R6_1, R6_2, R6_3, R7_1, R7_3})
     void ownerAddsListsAndRemovesMembers() {
         var ownerToken = registerCoordinator("grace@example.com");
         var eventId = createEvent(ownerToken);
@@ -48,13 +51,20 @@ class CfpCommitteeTest {
         given()
                 .header("Authorization", "Bearer " + ownerToken)
                 .contentType("application/json")
-                .body(Map.of("userId", memberA))
+                .body(Map.of("userId", memberB))
         .when().post("/api/events/" + eventId + "/cfp/committee")
         .then()
                 .statusCode(201)
-                .body("userId", is(memberA))
-                .body("name", is("Speaker ada@example.com"))
+                .body("userId", is(memberB))
+                .body("name", is("Speaker katherine@example.com"))
                 .body("createdAt", notNullValue());
+
+        given()
+                .header("Authorization", "Bearer " + ownerToken)
+                .contentType("application/json")
+                .body(Map.of("userId", memberA))
+        .when().post("/api/events/" + eventId + "/cfp/committee")
+        .then().statusCode(201);
 
         given()
                 .header("Authorization", "Bearer " + ownerToken)
@@ -74,18 +84,11 @@ class CfpCommitteeTest {
                 .statusCode(404)
                 .body("error", is("User not found"));
 
-        given()
-                .header("Authorization", "Bearer " + ownerToken)
-                .contentType("application/json")
-                .body(Map.of("userId", memberB))
-        .when().post("/api/events/" + eventId + "/cfp/committee")
-        .then().statusCode(201);
-
         given().when().get("/api/events/" + eventId + "/cfp/committee")
         .then()
                 .statusCode(200)
                 .body("size()", is(2))
-                .body("userId", containsInAnyOrder(memberA, memberB));
+                .body("userId", contains(memberA, memberB));
 
         given()
                 .header("Authorization", "Bearer " + ownerToken)
@@ -103,10 +106,11 @@ class CfpCommitteeTest {
         .then()
                 .statusCode(200)
                 .body("size()", is(1))
-                .body("userId", containsInAnyOrder(memberB));
+                .body("userId", contains(memberB));
     }
 
     @Test
+    @CfpRequirement({R3_1, R3_3})
     void openRequiresAtLeastOneMember() {
         var ownerToken = registerCoordinator("grace@example.com");
         var eventId = createEvent(ownerToken);
@@ -134,6 +138,7 @@ class CfpCommitteeTest {
     }
 
     @Test
+    @CfpRequirement({R6_5, R6_6, R7_2, R7_5, R7_6})
     void forbidsNonOwnerCommitteeChanges() {
         var ownerToken = registerCoordinator("grace@example.com");
         var eventId = createEvent(ownerToken);
@@ -147,6 +152,10 @@ class CfpCommitteeTest {
                 .contentType("application/json")
                 .body(Map.of("userId", memberId))
         .when().post("/api/events/" + eventId + "/cfp/committee")
+        .then().statusCode(401);
+
+        given()
+        .when().delete("/api/events/" + eventId + "/cfp/committee/" + memberId)
         .then().statusCode(401);
 
         for (var token : new String[]{otherOwnerToken, speakerToken}) {
@@ -171,6 +180,34 @@ class CfpCommitteeTest {
         .then()
                 .statusCode(404)
                 .body("error", is("Committee member not found"));
+    }
+
+    @Test
+    @CfpRequirement({R5_4, R6_4, R7_4})
+    void rejectsOperationsWithoutCfp() {
+        var ownerToken = registerCoordinator("grace@example.com");
+        var eventId = createEvent(ownerToken);
+
+        given().when().get("/api/events/" + eventId + "/cfp/committee")
+        .then()
+                .statusCode(404)
+                .body("error", is("CFP not found"));
+
+        given()
+                .header("Authorization", "Bearer " + ownerToken)
+                .contentType("application/json")
+                .body(Map.of("userId", 1))
+        .when().post("/api/events/" + eventId + "/cfp/committee")
+        .then()
+                .statusCode(404)
+                .body("error", is("CFP not found"));
+
+        given()
+                .header("Authorization", "Bearer " + ownerToken)
+        .when().delete("/api/events/" + eventId + "/cfp/committee/1")
+        .then()
+                .statusCode(404)
+                .body("error", is("CFP not found"));
     }
 
     private String registerCoordinator(String email) {

@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dearrudam.event.EventRequirement;
 import com.dearrudam.shared.TestDataCleaner;
 import com.dearrudam.user.boundary.CoordinatorRequest;
 import com.dearrudam.user.boundary.LoginRequest;
@@ -15,7 +16,9 @@ import com.dearrudam.user.boundary.SpeakerRequest;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.event.EventRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -31,6 +34,7 @@ class EventResourceTest {
     }
 
     @Test
+    @EventRequirement(R3_1)
     void createsEventForCoordinator() {
         var ownerId = given()
                 .contentType("application/json")
@@ -63,6 +67,7 @@ class EventResourceTest {
     }
 
     @Test
+    @EventRequirement({R1_1, R1_3})
     void listsEventsForVisitors() {
         var eventId = createEvent();
 
@@ -77,6 +82,45 @@ class EventResourceTest {
     }
 
     @Test
+    @EventRequirement(R1_2)
+    void listsEventsOrderedByStart() {
+        given()
+                .contentType("application/json")
+                .body(new CoordinatorRequest("Grace Hopper", "grace@example.com", "correct horse"))
+        .when().post("/api/coordinators")
+        .then().statusCode(201);
+
+        var token = login("grace@example.com", "correct horse");
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(new EventRequest("LaterConf",
+                        "Later conference",
+                        Instant.parse("2026-09-01T10:00:00Z"),
+                        Instant.parse("2026-09-03T18:00:00Z")))
+        .when().post("/api/events")
+        .then().statusCode(201);
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(new EventRequest("EarlierConf",
+                        "Earlier conference",
+                        Instant.parse("2026-06-01T10:00:00Z"),
+                        Instant.parse("2026-06-03T18:00:00Z")))
+        .when().post("/api/events")
+        .then().statusCode(201);
+
+        given()
+        .when().get("/api/events")
+        .then()
+                .statusCode(200)
+                .body("name", contains("EarlierConf", "LaterConf"));
+    }
+
+    @Test
+    @EventRequirement({R2_1, R2_2, R2_3})
     void getsEventForVisitors() {
         var eventId = createEvent();
 
@@ -100,6 +144,7 @@ class EventResourceTest {
     }
 
     @Test
+    @EventRequirement(R3_4)
     void rejectsNonCoordinators() {
         given()
                 .contentType("application/json")
@@ -124,6 +169,7 @@ class EventResourceTest {
     }
 
     @Test
+    @EventRequirement({R3_2, R3_3})
     void rejectsInvalidInput() {
         given()
                 .contentType("application/json")

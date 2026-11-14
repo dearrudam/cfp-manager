@@ -6,10 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dearrudam.shared.TestDataCleaner;
+import com.dearrudam.user.UserRequirement;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 
+import static com.dearrudam.user.UserRequirement.Rn.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -27,6 +29,7 @@ class SpeakerResourceTest {
     }
 
     @Test
+    @UserRequirement(R1_1)
     void registersSpeaker() {
         given()
                 .contentType("application/json")
@@ -43,6 +46,7 @@ class SpeakerResourceTest {
     }
 
     @Test
+    @UserRequirement({R1_2, R1_3})
     void grantsRoleOnlyWhenPasswordMatches() {
         given()
                 .contentType("application/json")
@@ -70,6 +74,7 @@ class SpeakerResourceTest {
     }
 
     @Test
+    @UserRequirement(R1_4)
     void rejectsInvalidInput() {
         given()
                 .contentType("application/json")
